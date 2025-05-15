@@ -1,7 +1,12 @@
 {
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ]
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "strict": true,
+    "jsx": "react",
+    "types": []
+  },
+  "include": ["src/types/vercel.d.ts", "api/**/*.ts", "src/**/*.ts"],
+  "exclude": ["node_modules"]
 }
