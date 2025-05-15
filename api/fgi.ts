@@ -25,7 +25,7 @@ export default async function handler(
 
     const data = await response.json();
 
-    // CDN に 24時間キャッシュさせるヘッダー
+    // <<--- ここ。Cache-Control ヘッダーを追加
     res.setHeader(
       'Cache-Control',
       'public, max-age=0, s-maxage=86400, stale-while-revalidate=3600'
