@@ -24,6 +24,13 @@ export default async function handler(
     );
 
     const data = await response.json();
+
+    // CDN に 24時間キャッシュさせるヘッダー
+    res.setHeader(
+      'Cache-Control',
+      'public, max-age=0, s-maxage=86400, stale-while-revalidate=3600'
+    );
+
     return res.status(response.status).json(data);
   } catch (e: any) {
     console.error('FGI fetch error:', e);
