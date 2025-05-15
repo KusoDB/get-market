@@ -1,4 +1,4 @@
-import { VercelRequest, VercelResponse } from "@vercel/node";
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 import yahooFinance from "yahoo-finance2";
 import { format } from "date-fns";
 import { RSI } from "technicalindicators";
@@ -37,12 +37,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // ---- 1) 一昨日 & 昨日 終値 ----
         const yesterday = sorted[sorted.length - 1];
-        const dayBefore  = sorted[sorted.length - 2];
+        const dayBefore = sorted[sorted.length - 2];
         const pctChange =
           ((yesterday.close! - dayBefore.close!) / dayBefore.close!) * 100;
 
         // ---- 2) RSI 計算 ----
-        // close 値だけ取り出して RSI ライブラリに渡す
         const closeValues = sorted.map((h) => h.close!) as number[];
         const rsiValues = RSI.calculate({
           values: closeValues,
@@ -54,12 +53,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           symbol,
           dayBeforeDate: format(dayBefore.date, "yyyy-MM-dd"),
           dayBeforeClose: dayBefore.close,
-          yesterdayDate:  format(yesterday.date, "yyyy-MM-dd"),
+          yesterdayDate: format(yesterday.date, "yyyy-MM-dd"),
           yesterdayClose: yesterday.close,
           percentageChange: pctChange.toFixed(2),
           rsi: latestRsi.toFixed(2),
         };
       })
+    );
+
+    // CDN に 24時間キャッシュさせるヘッダー
+    res.setHeader(
+      'Cache-Control',
+      'public, max-age=0, s-maxage=86400, stale-while-revalidate=3600'
     );
 
     return res.status(200).json(data);
