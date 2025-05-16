@@ -8,6 +8,8 @@ type NdxPayload = {
   twoWeeksAgoDate: string;
   twoWeeksAgoClose: number;
   percentageChange: string;
+  fetchedAt: string;
+  cache: boolean;
 };
 
 const TTL = 24 * 60 * 60 * 1000;
@@ -18,7 +20,10 @@ function getLastFriday(date: Date): Date {
   return subDays(date, diff);
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse
+) {
   const now = Date.now();
   if (ndxCache && now - ndxCache.timestamp < TTL) {
     return res.status(200).json(ndxCache.data);
@@ -49,6 +54,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       twoWeeksAgoDate: twoWeeksStr,
       twoWeeksAgoClose: firstClose,
       percentageChange: pct,
+      fetchedAt: new Date(now).toISOString(),
+      cache: false,
     };
 
     ndxCache = { timestamp: now, data: payload };
