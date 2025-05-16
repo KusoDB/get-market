@@ -5,7 +5,10 @@
     "moduleResolution": "Node",
     "strict": true,
     "jsx": "react",
-    "types": []
+    "types": [],
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true
   },
   "include": ["src/types/vercel.d.ts", "api/**/*.ts", "src/**/*.ts"],
   "exclude": ["node_modules"]

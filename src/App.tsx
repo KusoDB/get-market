@@ -1,4 +1,6 @@
+// src/App.tsx
 import React, { useEffect, useState } from 'react';
+import { NaaimWidget } from './components/NaaimWidget';
 
 interface FGIResponse {
   fgi: {
@@ -58,22 +60,28 @@ export default function App() {
     <div className="p-6 space-y-6">
       {/* FGI Section */}
       <section>
-        <h2 className="text-xl font-bold">Fear & Greed Index</h2>
+        <h2 className="text-xl font-bold">Fear &amp; Greed Index</h2>
         <p>
-          {fgiData?.fgi.now.value} ({fgiData?.fgi.now.valueText})
+          {fgiData.fgi.now.value} ({fgiData.fgi.now.valueText})
         </p>
+      </section>
+
+      {/* NAAIM Section */}
+      <section>
+        <NaaimWidget />
       </section>
 
       {/* NDX Weekly Change Section */}
       <section>
         <h2 className="text-xl font-bold">NDX Weekly Change</h2>
         <p>
-          Last Friday ({ndxChange?.lastFridayDate}): {ndxChange?.lastFridayClose.toLocaleString()}
+          Last Friday ({ndxChange.lastFridayDate}): {ndxChange.lastFridayClose.toLocaleString()}
         </p>
         <p>
-          Two Weeks Ago ({ndxChange?.twoWeeksAgoDate}): {ndxChange?.twoWeeksAgoClose.toLocaleString()}
+          Two Weeks Ago ({ndxChange.twoWeeksAgoDate}):{' '}
+          {ndxChange.twoWeeksAgoClose.toLocaleString()}
         </p>
-        <p>Change: {parseFloat(ndxChange?.percentageChange ?? '0').toFixed(2)}%</p>
+        <p>Change: {parseFloat(ndxChange.percentageChange).toFixed(2)}%</p>
       </section>
 
       {/* Market Stats Table */}
