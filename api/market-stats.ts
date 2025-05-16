@@ -1,75 +1,56 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
-import yahooFinance from "yahoo-finance2";
-import { format } from "date-fns";
-import { RSI } from "technicalindicators";
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import yahooFinance from 'yahoo-finance2';
+import { format } from 'date-fns';
+import { RSI } from 'technicalindicators';
 
-const SYMBOLS = ["^NDX", "^SOX", "XLK", "^VIX"];
-const RSI_PERIOD = 14;
+type Stat = {
+  symbol: string;
+  dayBeforeDate: string;
+  dayBeforeClose: number;
+  yesterdayDate: string;
+  yesterdayClose: number;
+  percentageChange: string;
+  rsi: string;
+};
 
-// 過去30営業日分くらい取れば、直近2日＋RSI14日分をカバーできます
-const LOOKBACK_DAYS = 30;
+const SYMBOLS = ['^NDX', '^SOX', 'XLK', '^VIX'];
+const TTL = 24 * 60 * 60 * 1000;
+let statsCache: { timestamp: number; data: Stat[] } | null = null;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const now = Date.now();
+  if (statsCache && now - statsCache.timestamp < TTL) {
+    return res.status(200).json(statsCache.data);
+  }
+
   try {
-    const now = new Date();
-    const fromDate = new Date(now);
-    fromDate.setDate(now.getDate() - LOOKBACK_DAYS);
+    const end = new Date();
+    const start = new Date(end);
+    start.setDate(end.getDate() - 30);
 
-    // 全シンボルを並列フェッチ
-    const data = await Promise.all(
-      SYMBOLS.map(async (symbol) => {
-        // 過去 LOOKBACK_DAYS 日〜今日までの OHLCV
-        const history = await yahooFinance.historical(symbol, {
-          period1: fromDate,
-          period2: now,
-          interval: "1d",
-        });
-
-        // 日付昇順にソート & クローズだけ抽出
-        const sorted = history
-          .filter((h) => h.close != null)
-          .sort((a, b) => a.date.getTime() - b.date.getTime());
-
-        // 要素数チェック
-        if (sorted.length < RSI_PERIOD + 2) {
-          throw new Error(`${symbol} のデータが足りません (${sorted.length} 件)`);
-        }
-
-        // ---- 1) 一昨日 & 昨日 終値 ----
-        const yesterday = sorted[sorted.length - 1];
-        const dayBefore = sorted[sorted.length - 2];
-        const pctChange =
-          ((yesterday.close! - dayBefore.close!) / dayBefore.close!) * 100;
-
-        // ---- 2) RSI 計算 ----
-        const closeValues = sorted.map((h) => h.close!) as number[];
-        const rsiValues = RSI.calculate({
-          values: closeValues,
-          period: RSI_PERIOD,
-        });
-        const latestRsi = rsiValues[rsiValues.length - 1];
-
+    const results = await Promise.all(
+      SYMBOLS.map(async (sym) => {
+        const hist = await yahooFinance.historical(sym, { period1: start, period2: end, interval: '1d' });
+        const sorted = hist.filter(h => h.close != null).sort((a, b) => a.date.getTime() - b.date.getTime());
+        const y = sorted.at(-1)!, b = sorted.at(-2)!;
+        const pct = (((y.close! - b.close!) / b.close!) * 100).toFixed(2);
+        const rsiList = RSI.calculate({ values: sorted.map(h => h.close!), period: 14 });
         return {
-          symbol,
-          dayBeforeDate: format(dayBefore.date, "yyyy-MM-dd"),
-          dayBeforeClose: dayBefore.close,
-          yesterdayDate: format(yesterday.date, "yyyy-MM-dd"),
-          yesterdayClose: yesterday.close,
-          percentageChange: pctChange.toFixed(2),
-          rsi: latestRsi.toFixed(2),
+          symbol: sym,
+          dayBeforeDate: format(b.date, 'yyyy-MM-dd'),
+          dayBeforeClose: b.close!,
+          yesterdayDate: format(y.date, 'yyyy-MM-dd'),
+          yesterdayClose: y.close!,
+          percentageChange: pct,
+          rsi: rsiList.at(-1)!.toFixed(2),
         };
       })
     );
 
-    // CDN に 24時間キャッシュさせるヘッダー
-    res.setHeader(
-      'Cache-Control',
-      'public, max-age=0, s-maxage=86400, stale-while-revalidate=3600'
-    );
-
-    return res.status(200).json(data);
-  } catch (error: any) {
-    console.error("Error in market-stats:", error);
-    return res.status(500).json({ error: error.message });
+    statsCache = { timestamp: now, data: results };
+    return res.status(200).json(results);
+  } catch (e: any) {
+    console.error(e);
+    return res.status(500).json({ error: e.message });
   }
 }
