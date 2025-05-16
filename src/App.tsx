@@ -76,11 +76,11 @@ export default function App() {
       <section>
         <h2 className="text-xl font-bold">NDX Weekly Change</h2>
         <p>
-          Last Friday ({ndxChange.lastFridayDate}): {ndxChange.lastFridayClose.toLocaleString()}
-        </p>
-        <p>
           Two Weeks Ago ({ndxChange.twoWeeksAgoDate}):{' '}
           {ndxChange.twoWeeksAgoClose.toLocaleString()}
+        </p>
+        <p>
+          Last Friday ({ndxChange.lastFridayDate}): {ndxChange.lastFridayClose.toLocaleString()}
         </p>
         <p>Change: {parseFloat(ndxChange.percentageChange).toFixed(2)}%</p>
       </section>
