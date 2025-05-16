@@ -13,7 +13,7 @@ export function NaaimWidget() {
   if (value === null) return <div>Loading...</div>;
   return (
     <div>
-      <h2>NAAIM Exposure Index</h2>
+      
       <p>{value.toFixed(2)}</p>
     </div>
   );

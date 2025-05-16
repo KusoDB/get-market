@@ -68,6 +68,7 @@ export default function App() {
 
       {/* NAAIM Section */}
       <section>
+        <h2 className="text-xl font-bold">NAAIM Exposure Index</h2>
         <NaaimWidget />
       </section>
 
