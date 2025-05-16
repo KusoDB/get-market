@@ -1,17 +1,19 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-type FgiData = any;  // 必要に応じて型定義を厳密化
+type FgiData = any;
 const TTL = 24 * 60 * 60 * 1000; // 24時間
-
-// モジュールスコープのキャッシュ
 let fgiCache: { timestamp: number; data: FgiData } | null = null;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const now = Date.now();
 
-  // キャッシュが有効ならそれを返す
+  // キャッシュが有効ならキャッシュデータ＋取得時刻を返す
   if (fgiCache && now - fgiCache.timestamp < TTL) {
-    return res.status(200).json(fgiCache.data);
+    return res.status(200).json({
+      ...fgiCache.data,
+      fetchedAt: new Date(fgiCache.timestamp).toISOString(),
+      cache: true,
+    });
   }
 
   // 新規取得
@@ -33,10 +35,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     );
     const data = await response.json();
 
-    // キャッシュを更新
+    // キャッシュ更新
     fgiCache = { timestamp: now, data };
 
-    return res.status(response.status).json(data);
+    return res.status(response.status).json({
+      ...data,
+      fetchedAt: new Date(now).toISOString(),
+      cache: false,
+    });
   } catch (e: any) {
     console.error('FGI fetch error:', e);
     return res.status(500).json({ error: e.message });
