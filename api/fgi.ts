@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-type FgiData = any;  // 実際のレスポンス型に置き換えてください
+type FgiData = any;  // 必要に応じて型定義を厳密化
 const TTL = 24 * 60 * 60 * 1000; // 24時間
 
 // モジュールスコープのキャッシュ
@@ -9,12 +9,12 @@ let fgiCache: { timestamp: number; data: FgiData } | null = null;
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const now = Date.now();
 
-  // キャッシュが生きていればそれを返す
+  // キャッシュが有効ならそれを返す
   if (fgiCache && now - fgiCache.timestamp < TTL) {
     return res.status(200).json(fgiCache.data);
   }
 
-  // 無ければ新規取得
+  // 新規取得
   const rapidKey = process.env.RAPIDAPI_KEY;
   if (!rapidKey) {
     return res.status(500).json({ error: 'RAPIDAPI_KEY が未設定です。' });
@@ -33,7 +33,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     );
     const data = await response.json();
 
-    // キャッシュ更新
+    // キャッシュを更新
     fgiCache = { timestamp: now, data };
 
     return res.status(response.status).json(data);
